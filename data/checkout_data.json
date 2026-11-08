@@ -1,0 +1,9 @@
+{
+  "valid_customer": {"first_name": "Zhang", "last_name": "San", "postal_code": "200000"},
+  "invalid_customers": [
+    {"desc": "缺少名字", "first_name": "", "last_name": "San", "postal_code": "200000", "error": "Error: First Name is required"},
+    {"desc": "缺少姓氏", "first_name": "Zhang", "last_name": "", "postal_code": "200000", "error": "Error: Last Name is required"},
+    {"desc": "缺少邮编", "first_name": "Zhang", "last_name": "San", "postal_code": "", "error": "Error: Postal Code is required"}
+  ],
+  "backpack": {"key": "sauce-labs-backpack", "name": "Sauce Labs Backpack", "price": "29.99"}
+}
