@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     parameters {
-        choice(name: 'BROWSER', choices: ['edge', 'chrome', 'firefox'], description: '用哪个浏览器跑')
+        choice(name: 'BROWSER', choices: ['chrome','edge',  'firefox'], description: '用哪个浏览器跑')
         choice(name: 'SCOPE', choices: ['all', 'smoke', 'regression'], description: '用例范围')
         booleanParam(name: 'HEADLESS', defaultValue: true, description: '无头模式，Jenkins 服务模式必须为 true')
     }
