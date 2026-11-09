@@ -1,0 +1,76 @@
+pipeline {
+    agent any
+
+    parameters {
+        choice(name: 'BROWSER', choices: ['edge', 'chrome', 'firefox'], description: '用哪个浏览器跑')
+        choice(name: 'SCOPE', choices: ['all', 'smoke', 'regression'], description: '用例范围')
+        booleanParam(name: 'HEADLESS', defaultValue: true, description: '无头模式，Jenkins 服务模式必须为 true')
+    }
+
+    triggers {
+        cron('H 9 * * 1-5')
+    }
+
+    options {
+        timestamps()
+        timeout(time: 30, unit: 'MINUTES')
+        buildDiscarder(logRotator(numToKeepStr: '20', artifactNumToKeepStr: '10'))
+        disableConcurrentBuilds()   // 防止两次构建抢同一个 allure-results
+    }
+
+    environment {
+        PYTHON = 'C:\\Users\\26861\\AppData\\Local\\Python\\pythoncore-3.15-64\\python.exe'
+        PYTHONIOENCODING = 'utf-8'
+        PYTHONUTF8 = '1'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+                // 清掉上次的 junit 结果，避免和这次混在一起
+                bat 'if exist report rmdir /s /q report'
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                bat '"%PYTHON%" -m pip install -r requirements.txt'
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                script {
+                    def scope = params.SCOPE == 'all' ? '' : "-m ${params.SCOPE}"
+                    def headless = params.HEADLESS ? '--headless' : ''
+                    bat """
+                        chcp 65001 > nul
+                        "%PYTHON%" -m pytest --browser=${params.BROWSER} ${headless} ${scope} --alluredir=allure-results --clean-alluredir --junitxml=report/junit.xml
+                    """
+                }
+            }
+            post {
+                always {
+                    junit allowEmptyResults: true, testResults: 'report/junit.xml'
+                    archiveArtifacts artifacts: 'screenshots/**/*.png, report/junit.xml', allowEmptyArchive: true
+                }
+            }
+        }
+
+        stage('Allure Report') {
+            steps {
+                allure includeProperties: false, jdk: '', results: [[path: 'allure-results']]
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "测试通过：${params.BROWSER} / ${params.SCOPE}"
+        }
+        unsuccessful {
+            archiveArtifacts artifacts: 'screenshots/**/*.png', allowEmptyArchive: true
+        }
+    }
+}
